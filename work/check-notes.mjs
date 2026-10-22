@@ -1,0 +1,18 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';import {calculate,branches} from '../engine.mjs';
+const els=new Map();for(const key of ['#editor','#close','#cancel','#month','#branch','#search'])els.set(key,{value:key==='#month'?'2026-09':'',innerHTML:'',textContent:''});
+const sandbox={document:{querySelector:s=>els.get(s)||null},window:{addEventListener(){}},console,location:{hash:''},history:{},setTimeout,Blob,URL};vm.createContext(sandbox);
+vm.runInContext(fs.readFileSync('public/app.js','utf8').replace('load().catch(e=>notify(e.message,true));',''),sandbox);
+const seed=JSON.parse(fs.readFileSync('seed.json','utf8'));
+const rr=seed.employees.map(e=>calculate(e,[],'2026-09'));
+vm.runInContext(`state=${JSON.stringify({employees:seed.employees,branches})};report=${JSON.stringify(rr)};`,sandbox);
+let html=vm.runInContext('buildPrintPages(report)',sandbox);
+assert.equal((html.match(/class="print-sheet"/g)||[]).length,5);assert.equal((html.match(/class="employee-sign"/g)||[]).length,23);assert.equal((html.match(/class="signature-grid"/g)||[]).length,5);assert.match(html,/ฉบับร่าง/);
+els.get('#branch').value='แม่แตง';html=vm.runInContext("buildPrintPages(report.filter(r=>r.branch==='แม่แตง'))",sandbox);assert.equal((html.match(/class="print-sheet"/g)||[]).length,1);assert.equal((html.match(/class="employee-sign"/g)||[]).length,6);assert.ok(!html.includes('สาขาลำพูน'));
+els.get('#branch').value='';vm.runInContext("pdfLayout='combined';signers.prepared='<script>alert(1)</script>';",sandbox);html=vm.runInContext('buildPrintPages(report)',sandbox);assert.equal((html.match(/class="print-sheet"/g)||[]).length,4);assert.equal((html.match(/class="employee-sign"/g)||[]).length,23);assert.ok(!html.includes('<script>'));assert.ok(html.includes('&lt;script&gt;'));
+const monthly=vm.runInContext('monthlyEntry(report)',sandbox);assert.equal((monthly.match(/data-entry=/g)||[]).length,23);assert.equal((monthly.match(/data-field="leave"/g)||[]).length,23);assert.match(monthly,/step="0.5"/);
+fs.writeFileSync('work/report-preview.html','<!doctype html><html lang="th"><meta charset="UTF-8"><style>'+fs.readFileSync('public/style.css','utf8')+fs.readFileSync('public/menu.css','utf8')+'</style><body>'+html+'</body></html>');
+console.log('PASS: 5 branch sheets; 23 employee signatures; 3 approver signatures/page; selected branch filtering; combined pagination; HTML escaping; monthly input table');
+
+const note=vm.runInContext('deductionNotes([{name:"ทดสอบ",branch:"แม่แตง",saved:true,total:125,leaveFine:75,unpaid:0.5,lateFine:50,chargedLate:2,note:"ตรวจแล้ว"}])',sandbox).join(' ');
+assert.ok(note.includes('0.5 วัน × 150 = 75'));assert.ok(note.includes('2 ครั้ง × 25 = 50'));assert.ok(note.includes('รวม 125'));assert.ok(note.includes('ตรวจแล้ว'));
+console.log('PASS: half-day deduction, late charges, total, employee note');

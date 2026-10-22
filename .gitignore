@@ -1,0 +1,9 @@
+data/
+runtime/
+.env
+work/
+outputs/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+.env.*

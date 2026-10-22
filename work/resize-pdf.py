@@ -1,0 +1,15 @@
+from pathlib import Path
+p=Path('public/app.js');s=p.read_text(encoding='utf-8')
+s=s.replace("fontSize:8.5,margin:[2,5,2,5]","fontSize:11,noWrap:true,margin:[0,7,0,7]")
+s=s.replace("cell(r.name+(!r.saved?'\\n(ยังไม่บันทึก)':''))","cell(r.name)")
+s=s.replace("widths:[30,'*',49,29,29,29,34,40,40,42,76]","widths:[28,'*',45,28,28,30,34,42,42,46,65]")
+s=s.replace("fontSize:9,margin:[2,6,2,6]","fontSize:11,noWrap:true,margin:[0,7,0,7]")
+s=s.replace("widths:['*',50,52,52,48,48,52,52,52,72]","widths:['*',45,50,50,48,48,52,52,52,65]")
+s=s.replace("c(sourceN(r[k]),{alignment:'center'})","c(sourceN(r[k]),{alignment:'right'})")
+s=s.replace("c(n(sumField(g.pageRows,k)),{alignment:'center',bold:true})","c(n(sumField(g.pageRows,k)),{alignment:'right',bold:true})")
+# Group headings must fit the pair of monthly columns at the larger body size.
+s=s.replace("c('เดือนปัจจุบัน · สิงหาคม',{colSpan:2,bold:true})","c('สิงหาคม 2569',{colSpan:2,bold:true,alignment:'center'})")
+s=s.replace("c('เดือนก่อนสิงหาคม',{colSpan:2,bold:true})","c('เดือนก่อนสิงหาคม',{colSpan:2,bold:true,alignment:'center'})")
+s=s.replace("c('ยอดปลายเดือนตามไฟล์',{colSpan:3,bold:true})","c('ยอดปลายเดือนตามไฟล์',{colSpan:3,bold:true,alignment:'center'})")
+p.write_text(s,encoding='utf-8')
+p=Path('work/render-pdf.mjs');s=p.read_text(encoding='utf-8').replace('C1CONCLUDE-','TRO-');p.write_text(s,encoding='utf-8')

@@ -1,0 +1,11 @@
+import fs from 'node:fs';import path from 'node:path';import {spawnSync} from 'node:child_process';import assert from 'node:assert/strict';import {loadAccess,verifyPassword} from '../auth.mjs';
+const dir=fs.mkdtempSync(path.join(process.cwd(),'work','reset-test-'));
+const run=(password,args=[])=>spawnSync(process.execPath,['setup-password.mjs',...args],{input:JSON.stringify({password}),env:{...process.env,DATA_DIR:dir},encoding:'utf8'});
+assert.equal(run('Old-test-password').status,0);
+const before=fs.readFileSync(path.join(dir,'access.json'),'utf8');
+assert.notEqual(run('short',['--reset']).status,0);assert.equal(fs.readFileSync(path.join(dir,'access.json'),'utf8'),before);
+assert.notEqual(run('Overwrite-without-reset').status,0);
+assert.equal(run('New-test-password',['--reset']).status,0);
+assert.equal(verifyPassword('Old-test-password',loadAccess(path.join(dir,'access.json'))),false);
+assert.equal(verifyPassword('New-test-password',loadAccess(path.join(dir,'access.json'))),true);
+console.log('PASS: reset changes password; rejects short passwords and accidental overwrite. Real credentials unchanged.');

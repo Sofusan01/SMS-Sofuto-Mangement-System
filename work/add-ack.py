@@ -1,0 +1,16 @@
+from pathlib import Path
+p=Path('public/app.js');s=p.read_text(encoding='utf-8')
+a=s.index('function archiveTable(');b=s.index('function archiveView',a)
+t=s[a:b].replace('function archiveTable(rows)','function archiveTable(rows,signature=false)')
+t=t.replace('<th colspan="3">ยอดปลายเดือนตามไฟล์</th>','<th colspan="3">ยอดปลายเดือนตามไฟล์</th>${signature?\'<th rowspan="2" class="ack-column">ลงชื่อรับทราบ</th>\':\'\'}')
+t=t.replace(".join('')}</tr>`).join('')", ".join('')}${signature?'<td><span class=\"employee-sign\"></span></td>':''}</tr>`).join('')")
+t=t.replace("'<tr><td colspan=\"8\" class=\"empty\">ไม่พบพนักงานตามเงื่อนไข</td></tr>'", "`<tr><td colspan=\"${signature?9:8}\" class=\"empty\">ไม่พบพนักงานตามเงื่อนไข</td></tr>`")
+t=t.replace(".join('')}</tr></tbody>",".join('')}${signature?'<td></td>':''}</tr></tbody>")
+s=s[:a]+t+s[b:]
+s=s.replace('archiveTable(g.pageRows)','archiveTable(g.pageRows,true)')
+s=s.replace("c('ลายเซ็น',{rowSpan:2,bold:true})","c('ลงชื่อรับทราบ',{rowSpan:2,bold:true,fontSize:10,alignment:'center'})")
+s=s.replace("'ลายเซ็น'].map","'ลงชื่อรับทราบ'].map")
+s=s.replace('<th>ลายเซ็น<br>พนักงาน</th>','<th>ลงชื่อรับทราบ</th>')
+s=s.replace("widths:['*',45,50,50,48,48,52,52,52,65]","widths:['*',45,50,50,48,48,52,52,52,85]")
+s=s.replace("widths:[28,'*',45,28,28,30,34,42,42,46,65]","widths:[28,'*',45,28,28,30,34,42,42,46,85]")
+p.write_text(s,encoding='utf-8')

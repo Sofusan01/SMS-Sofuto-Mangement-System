@@ -1,0 +1,20 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {passwordHash} from './auth.mjs';
+let input='';for await(const chunk of process.stdin)input+=chunk;
+const password=JSON.parse(input).password;
+if(typeof password!=='string'||password.length<12||password.length>128)throw Error('Use a password of 12-128 characters.');
+const data=process.env.DATA_DIR||path.join(path.dirname(fileURLToPath(import.meta.url)),'data');
+fs.mkdirSync(data,{recursive:true});
+const file=path.join(data,'access.json');
+const reset=process.argv.includes('--reset');
+if(fs.existsSync(file)&&!reset)throw Error('Password is already configured. Existing credentials were not changed.');
+if(reset&&!fs.existsSync(file))throw Error('No app password exists. Run SETUP-OFFICE.bat first.');
+const value=JSON.stringify(passwordHash(password));
+if(reset){
+ const temporary=file+'.'+process.pid+'.tmp';
+ fs.writeFileSync(temporary,value,{mode:0o600,flag:'wx'});
+ fs.renameSync(temporary,file);
+}else fs.writeFileSync(file,value,{mode:0o600,flag:'wx'});
+console.log(reset?'Password reset. Restart the app server to apply the new password and end existing sessions.':'App password configured.');
